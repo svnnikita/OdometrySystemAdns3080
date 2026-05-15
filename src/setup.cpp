@@ -256,7 +256,7 @@ void SetupPeriph::spi3Setup()
 
     // SCK = PC10, MISO = PC11, MOSI = PC12
     gpio_mode_setup(GPIOC, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO10 | GPIO11 | GPIO12);
-    gpio_set_af(GPIOC, GPIO_AF5, GPIO10 | GPIO11 | GPIO12);
+    gpio_set_af(GPIOC, GPIO_AF6, GPIO10 | GPIO11 | GPIO12);
 
     // устанавливаем параметры вывода для SCK и MOSI
     gpio_set_output_options(GPIOC, GPIO_OTYPE_PP, GPIO_OSPEED_50MHZ, GPIO10 | GPIO12);
