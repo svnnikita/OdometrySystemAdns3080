@@ -20,7 +20,10 @@ ADNS3080::ADNS3080(const Adns3080Pins &pins)
 	  _cs_gpio_pin(pins.cs_gpio_pin),
 	  _spi(pins.spi),
 	  _reset_gpio_port(pins.reset_gpio_port),
-	  _reset_gpio_pin(pins.reset_gpio_pin)
+	  _reset_gpio_pin(pins.reset_gpio_pin),
+	  _dma(pins.dma),
+	  _stream_tx(pins.stream_tx),
+	  _stream_rx(pins.stream_rx)
 {
 
 }
@@ -200,21 +203,20 @@ void ADNS3080::
 				   SemaphoreHandle_t &_dma_rx_semaphore)
 {
 	// создаем буфферы для получения и отправки данных
-	static uint16_t tx_cmd_buf[1] = {ADNS3080_MOTION_BURST};
-	static uint16_t tx_dummy_buf[7] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-	static uint16_t rx_buf[7];
+	uint8_t tx_cmd_buf[1] = {ADNS3080_MOTION_BURST};
+	uint8_t tx_dummy_buf[7] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+	uint8_t rx_buf[7];
 
 	csLow();
 
 	// передаем датчику адрес регистра
-	dma_disable_stream(DMA2, DMA_STREAM3);
-	dma_set_memory_address(DMA2, DMA_STREAM3, (uint32_t)tx_cmd_buf);
-    dma_set_number_of_data(DMA2, DMA_STREAM3, 1);
-    dma_enable_stream(DMA2, DMA_STREAM3);
+	dma_disable_stream(_dma, _stream_tx);
+	dma_set_memory_address(_dma, _stream_tx, (uint32_t)tx_cmd_buf);
+    dma_set_number_of_data(_dma, _stream_tx, 1);
 
 	// очищаем флаги прерываний dma
-	dma_clear_interrupt_flags(DMA2, DMA_STREAM3, DMA_TCIF);
-	dma_enable_stream(DMA2, DMA_STREAM3);
+	dma_clear_interrupt_flags(_dma, _stream_tx, DMA_TCIF);
+	dma_enable_stream(_dma, _stream_tx);
 
 	// ждем завершения передачи адреса
 	xSemaphoreTake(_dma_tx_semaphore, portMAX_DELAY);
@@ -229,21 +231,24 @@ void ADNS3080::
 	delayUs(ADNS3080_T_SWW);
 
 	// запускаем передачу и прием
-	dma_disable_stream(DMA2, DMA_STREAM3); // TX
-    dma_disable_stream(DMA2, DMA_STREAM2); // RX
+	dma_disable_stream(_dma, _stream_tx); // TX
+    dma_disable_stream(_dma, _stream_rx); // RX
 
-	dma_clear_interrupt_flags(DMA2, DMA_STREAM3, DMA_TCIF);
-	dma_clear_interrupt_flags(DMA2, DMA_STREAM2, DMA_TCIF);
+	// очищаем флаги прерываний каналов передачи и приема
+	dma_clear_interrupt_flags(_dma, _stream_tx, DMA_TCIF);
+	dma_clear_interrupt_flags(_dma, _stream_rx, DMA_TCIF);
 
-    dma_set_memory_address(DMA2, DMA_STREAM2, (uint32_t)rx_buf);
-    dma_set_number_of_data(DMA2, DMA_STREAM2, 7);
+	// настраиваем адрес памяти, куда будем принимать данные
+    dma_set_memory_address(_dma, _stream_rx, (uint32_t)rx_buf);
+    dma_set_number_of_data(_dma, _stream_rx, 7);
 
-    dma_set_memory_address(DMA2, DMA_STREAM3, (uint32_t)tx_dummy_buf);
-    dma_set_number_of_data(DMA2, DMA_STREAM3, 7);
+	// настраиваем адрес памяти, откуда будем брать фиктивные данные
+    dma_set_memory_address(_dma, _stream_tx, (uint32_t)tx_dummy_buf);
+    dma_set_number_of_data(_dma, _stream_tx, 7);
 
-	// выключаем оба потока
-	dma_enable_stream(DMA2, DMA_STREAM2);
-    dma_enable_stream(DMA2, DMA_STREAM3);
+	// включаем оба потока
+	dma_enable_stream(_dma, _stream_rx);
+    dma_enable_stream(_dma, _stream_tx);
 
 	// ждем завершения приема
 	xSemaphoreTake(_dma_rx_semaphore, portMAX_DELAY);
@@ -252,10 +257,10 @@ void ADNS3080::
 
 	// копируем данные
     data.motion = (rx_buf[0] & 0x80) ? 1 : 0;
-    data.dx = (uint8_t)rx_buf[1];
-    data.dy = (uint8_t)rx_buf[2];
+    data.dx = (int8_t)rx_buf[1];
+    data.dy = (int8_t)rx_buf[2];
     data.squal = rx_buf[3];
-    data.shutter = (uint16_t)((rx_buf[4] << 8) | rx_buf[5]);
+    data.shutter = (int16_t)((rx_buf[4] << 8) | rx_buf[5]);
     data.max_pix = rx_buf[6];
 }
 
