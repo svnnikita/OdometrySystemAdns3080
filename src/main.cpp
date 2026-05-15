@@ -33,12 +33,11 @@ const ADNS3080::Adns3080Pins l_camera_pins = {
     .cs_gpio_pin = GPIO4,
     .spi = SPI1,
     .reset_gpio_port = GPIOB,
-    .reset_gpio_pin = GPIO0
+    .reset_gpio_pin = GPIO0,
+    .dma = DMA2,
+    .stream_tx = DMA_STREAM3,
+    .stream_rx = DMA_STREAM2
 };
-// объект левой камеры
-ADNS3080 l_camera = ADNS3080(l_camera_pins);
-// структура данных о перемещении
-ADNS3080::MotionData l_data;
 
 // создадим структуру с наименованиями выводов правого датчика
 const ADNS3080::Adns3080Pins r_camera_pins = {
@@ -46,15 +45,23 @@ const ADNS3080::Adns3080Pins r_camera_pins = {
     .cs_gpio_pin = GPIO0,
     .spi = SPI3,
     .reset_gpio_port = GPIOD,
-    .reset_gpio_pin = GPIO1
+    .reset_gpio_pin = GPIO1,
+    .dma = DMA1,
+    .stream_tx = DMA_STREAM5,
+    .stream_rx = DMA_STREAM0
 };
+
+// объекты камер
+ADNS3080 l_camera = ADNS3080(l_camera_pins);
 ADNS3080 r_camera = ADNS3080(r_camera_pins);
-ADNS3080::MotionData r_data;
+
+// структура данных о перемещении
+ADNS3080::MotionData l_data, r_data;
 
 static SemaphoreHandle_t uart_tx_semaphore = NULL;
 
 // создаем глобальный буффер для строки
-char buffer[32];
+char buffer[128];
 uint16_t id1, id2;
 
 // создаем задачу
@@ -67,25 +74,14 @@ void uart_ts_task(void *pvParameters)
    
     while (1) {
         if (xSemaphoreTake(uart_tx_semaphore, portMAX_DELAY) == pdTRUE) {
-            // формируем строку
-            // uint32_t str = 
-            //     sprintf(buffer, 
-            //             "M: %d, X: %4d, Y: %4d, SQ: %3u, SH: %d, MP: %u\r\n", 
-            //             l_data.motion, l_data.dx, l_data.dy, 
-            //             l_data.squal, l_data.shutter, l_data.max_pix);
-
             // // формируем строку
-            // uint32_t str = 
-            //     sprintf(buffer, 
-            //             "M: %d, X: %4d, Y: %4d, SQ: %3u, SH: %d, MP: %u\r\n", 
-            //             r_data.motion, r_data.dx, r_data.dy, 
-            //             r_data.squal, r_data.shutter, r_data.max_pix);
-
             uint32_t str = 
                 sprintf(buffer, 
-                        "id1: 0x%04X, id2: 0x%04X\r\n", 
-                        id1, id2);
-
+                        "L - M: %d, X: %4d, Y: %4d, SQ: %3u, SH: %d, MP: %u\r\nR - M: %d, X: %4d, Y: %4d, SQ: %3u, SH: %d, MP: %u\r\n", 
+                        l_data.motion, l_data.dx, l_data.dy, 
+                        l_data.squal, l_data.shutter, l_data.max_pix,
+                        r_data.motion, r_data.dx, r_data.dy, 
+                        r_data.squal, r_data.shutter, r_data.max_pix);
 
             // настраиваем адреса и запускаем канал DMA
             dma_set_memory_address(DMA1, DMA_STREAM6, (uint32_t)buffer);
@@ -117,113 +113,113 @@ void dma1_stream6_isr()
     }
 }
 
-// // определяем семафоры для работы с левым датчиком
-// static SemaphoreHandle_t l_dma_tx_semaphore = NULL;
-// static SemaphoreHandle_t l_dma_rx_semaphore = NULL;
+// определяем семафоры для работы с левым датчиком
+static SemaphoreHandle_t l_dma_tx_semaphore = NULL;
+static SemaphoreHandle_t l_dma_rx_semaphore = NULL;
 
-// // создаем задачу для отправки данных датчику
-// void l_motionBurst_task(void *pvParameters)
-// {
-//     // создаем семафоры
-//     l_dma_tx_semaphore = xSemaphoreCreateBinary();
-//     l_dma_rx_semaphore = xSemaphoreCreateBinary();
+// создаем задачу для отправки данных датчику
+void l_motionBurst_task(void *pvParameters)
+{
+    // создаем семафоры
+    l_dma_tx_semaphore = xSemaphoreCreateBinary();
+    l_dma_rx_semaphore = xSemaphoreCreateBinary();
 
-//     const TickType_t period = pdMS_TO_TICKS(1); // опрос каждую 1 мс
+    const TickType_t period = pdMS_TO_TICKS(1); // опрос каждую 1 мс
 
-//     for (;;) {
-//         l_camera.motionBurstDma(l_data, l_dma_tx_semaphore, l_dma_rx_semaphore);
-//         vTaskDelay(period);
-//     }
-// }
+    for (;;) {
+        l_camera.motionBurstDma(l_data, l_dma_tx_semaphore, l_dma_rx_semaphore);
+        vTaskDelay(period);
+    }
+}
 
-// // обработчик прерывания spi1_tx
-// extern "C"
-// void dma2_stream3_isr()
-// {
-//     if (dma_get_interrupt_flag(DMA2, DMA_STREAM3, DMA_TCIF)) {
-//         dma_clear_interrupt_flags(DMA2, DMA_STREAM3, DMA_TCIF);
+// обработчик прерывания spi1_tx
+extern "C"
+void dma2_stream3_isr()
+{
+    if (dma_get_interrupt_flag(DMA2, DMA_STREAM3, DMA_TCIF)) {
+        dma_clear_interrupt_flags(DMA2, DMA_STREAM3, DMA_TCIF);
 
-//         // освобождаем семафор и отдаем его задаче
-//         BaseType_t woken = pdFALSE;
-//         // даём семафор из ISR
-//         xSemaphoreGiveFromISR(l_dma_tx_semaphore, &woken);
-//         // смотрим флаг woken
-//         portYIELD_FROM_ISR(woken);
-//     }
-// }
+        // освобождаем семафор и отдаем его задаче
+        BaseType_t woken = pdFALSE;
+        // даём семафор из ISR
+        xSemaphoreGiveFromISR(l_dma_tx_semaphore, &woken);
+        // смотрим флаг woken
+        portYIELD_FROM_ISR(woken);
+    }
+}
 
-// // обработчик прерывания spi1_rx
-// extern "C"
-// void dma2_stream2_isr()
-// {
-//     if (dma_get_interrupt_flag(DMA2, DMA_STREAM2, DMA_TCIF)) {
-//         dma_clear_interrupt_flags(DMA2, DMA_STREAM2, DMA_TCIF);
+// обработчик прерывания spi1_rx
+extern "C"
+void dma2_stream2_isr()
+{
+    if (dma_get_interrupt_flag(DMA2, DMA_STREAM2, DMA_TCIF)) {
+        dma_clear_interrupt_flags(DMA2, DMA_STREAM2, DMA_TCIF);
 
-//         // освобождаем семафор
-//         // освобождаем семафор и отдаем его задаче
-//         BaseType_t woken = pdFALSE;
+        // освобождаем семафор
+        // освобождаем семафор и отдаем его задаче
+        BaseType_t woken = pdFALSE;
 
-//         // даём семафор из ISR
-//         xSemaphoreGiveFromISR(l_dma_rx_semaphore, &woken);
+        // даём семафор из ISR
+        xSemaphoreGiveFromISR(l_dma_rx_semaphore, &woken);
 
-//         // смотрим флаг woken
-//         portYIELD_FROM_ISR(woken);
-//     }
-// }
+        // смотрим флаг woken
+        portYIELD_FROM_ISR(woken);
+    }
+}
 
-// // определяем семафоры для работы с правым датчиком
-// static SemaphoreHandle_t r_dma_tx_semaphore = NULL;
-// static SemaphoreHandle_t r_dma_rx_semaphore = NULL;
+// определяем семафоры для работы с правым датчиком
+static SemaphoreHandle_t r_dma_tx_semaphore = NULL;
+static SemaphoreHandle_t r_dma_rx_semaphore = NULL;
 
-// // создаем задачу для отправки данных датчику
-// void r_motionBurst_task(void *pvParameters)
-// {
-//     // создаем семафоры
-//     r_dma_tx_semaphore = xSemaphoreCreateBinary();
-//     r_dma_rx_semaphore = xSemaphoreCreateBinary();
+// создаем задачу для отправки данных датчику
+void r_motionBurst_task(void *pvParameters)
+{
+    // создаем семафоры
+    r_dma_tx_semaphore = xSemaphoreCreateBinary();
+    r_dma_rx_semaphore = xSemaphoreCreateBinary();
 
-//     const TickType_t period = pdMS_TO_TICKS(1); // опрос каждую 1 мс
+    const TickType_t period = pdMS_TO_TICKS(1); // опрос каждую 1 мс
 
-//     for (;;) {
-//         r_camera.motionBurstDma(r_data, r_dma_tx_semaphore, r_dma_rx_semaphore);
-//         vTaskDelay(period);
-//     }
-// }
+    for (;;) {
+        r_camera.motionBurstDma(r_data, r_dma_tx_semaphore, r_dma_rx_semaphore);
+        vTaskDelay(period);
+    }
+}
 
-// // обработчик прерывания spi3_tx
-// extern "C"
-// void dma1_stream5_isr()
-// {
-//     if (dma_get_interrupt_flag(DMA1, DMA_STREAM5, DMA_TCIF)) {
-//         dma_clear_interrupt_flags(DMA1, DMA_STREAM5, DMA_TCIF);
+// обработчик прерывания spi3_tx
+extern "C"
+void dma1_stream5_isr()
+{
+    if (dma_get_interrupt_flag(DMA1, DMA_STREAM5, DMA_TCIF)) {
+        dma_clear_interrupt_flags(DMA1, DMA_STREAM5, DMA_TCIF);
 
-//         // освобождаем семафор и отдаем его задаче
-//         BaseType_t woken = pdFALSE;
-//         // даём семафор из ISR
-//         xSemaphoreGiveFromISR(r_dma_tx_semaphore, &woken);
-//         // смотрим флаг woken
-//         portYIELD_FROM_ISR(woken);
-//     }
-// }
+        // освобождаем семафор и отдаем его задаче
+        BaseType_t woken = pdFALSE;
+        // даём семафор из ISR
+        xSemaphoreGiveFromISR(r_dma_tx_semaphore, &woken);
+        // смотрим флаг woken
+        portYIELD_FROM_ISR(woken);
+    }
+}
 
-// // обработчик прерывания spi3_rx
-// extern "C"
-// void dma1_stream0_isr()
-// {
-//     if (dma_get_interrupt_flag(DMA1, DMA_STREAM0, DMA_TCIF)) {
-//         dma_clear_interrupt_flags(DMA1, DMA_STREAM0, DMA_TCIF);
+// обработчик прерывания spi3_rx
+extern "C"
+void dma1_stream0_isr()
+{
+    if (dma_get_interrupt_flag(DMA1, DMA_STREAM0, DMA_TCIF)) {
+        dma_clear_interrupt_flags(DMA1, DMA_STREAM0, DMA_TCIF);
 
-//         // освобождаем семафор
-//         // освобождаем семафор и отдаем его задаче
-//         BaseType_t woken = pdFALSE;
+        // освобождаем семафор
+        // освобождаем семафор и отдаем его задаче
+        BaseType_t woken = pdFALSE;
 
-//         // даём семафор из ISR
-//         xSemaphoreGiveFromISR(r_dma_rx_semaphore, &woken);
+        // даём семафор из ISR
+        xSemaphoreGiveFromISR(r_dma_rx_semaphore, &woken);
 
-//         // смотрим флаг woken
-//         portYIELD_FROM_ISR(woken);
-//     }
-// }
+        // смотрим флаг woken
+        portYIELD_FROM_ISR(woken);
+    }
+}
 
 // создаем семафор для работы ethernet
 // SemaphoreHandle_t eth_rx_semaphore;
@@ -336,29 +332,77 @@ void network_task(void *arg) {
     while (1) vTaskDelay(pdMS_TO_TICKS(1000));
 }
 
+// создадим функцию отправки данных по udp
+static void udp_send_task(void *arg)
+{
+    vTaskDelay(pdMS_TO_TICKS(1000));
+
+    // обозначаем, что мы вошли в функцию
+    usart_send_blocking(USART2, 'U');
+
+    // указатель на блок управления udp
+    struct udp_pcb *udp_pcb;
+    ip_addr_t remote_ip;
+    err_t err;
+
+    // создаем блок управления udp
+    udp_pcb = udp_new();
+    // проверяем
+    if (udp_pcb == NULL) {
+        while (1);
+    }
+
+    // задаем ip адрес получателя
+    IP4_ADDR(&remote_ip, 192,168,1,50);
+
+    // бесконечный цикл отправки
+    while (1) {
+        char buffer[128];
+        uint32_t len = 
+                sprintf(buffer, 
+                        "L - M: %d, X: %4d, Y: %4d, SQ: %3u, SH: %d, MP: %u\r\nR - M: %d, X: %4d, Y: %4d, SQ: %3u, SH: %d, MP: %u\r\n", 
+                        l_data.motion, l_data.dx, l_data.dy, 
+                        l_data.squal, l_data.shutter, l_data.max_pix,
+                        r_data.motion, r_data.dx, r_data.dy, 
+                        r_data.squal, r_data.shutter, r_data.max_pix);
+
+        // создаем пакетный буффер для отправки
+        struct pbuf *p = pbuf_alloc(PBUF_TRANSPORT, len, PBUF_RAM);
+        // проверяем
+        if (p != NULL) {
+            memcpy(p->payload, buffer, len);
+            // отправляем udp датаграмму на порт 8888
+            err = udp_sendto(udp_pcb, p, &remote_ip, 8888);
+            pbuf_free(p);
+            // проверяем
+            if (err != ERR_OK) {
+                // выводим отладочное сообщение
+                usart_send_blocking(USART2, 'E');
+            }
+
+        }
+        vTaskDelay(pdMS_TO_TICKS(1));
+    }
+}
+
 int main () { 
     // небольшая задержка для включения датчика
     for (volatile uint32_t i = 0; i < 2000000; i++);
     
     // сконфигурируем датчики
     // включаем подсветку и устанавливаем высокое разрешение
-    // volatile uint8_t l_setup = l_camera.setup(true, true);
-    // l_camera.delayUs(ADNS3080_T_SWW);
+    volatile uint8_t l_setup = l_camera.setup(true, true);
+    l_camera.delayUs(ADNS3080_T_SWW);
     
-    // volatile uint8_t r_setup = r_camera.setup(true, true);
-
-    // volatile uint8_t config = r_camera.readRegister(ADNS3080::ADNS3080_CONFIGURATION_BITS);
-	// r_camera.delay_us(ADNS3080_T_SWW);
-
-	// volatile uint8_t result = r_camera.readRegister(ADNS3080::ADNS3080_PRODUCT_ID);
-    // r_camera.delay_us(ADNS3080_T_SWW);
+    volatile uint8_t r_setup = r_camera.setup(true, true);
+	r_camera.delayUs(ADNS3080_T_SWW);
 
     // проверяем корректность подключения
-    // if (l_setup == true) {
-    //     usart_send_blocking(USART2, 't');
-    // } else { 
-    //     usart_send_blocking(USART2, 'f');
-    // }
+    if (l_setup == true && r_setup == true) {
+        usart_send_blocking(USART2, 't');
+    } else { 
+        usart_send_blocking(USART2, 'f');
+    }
 
     // сконфигурируем lan8720
     // прочитаем id
@@ -366,10 +410,11 @@ int main () {
     id1 = lan8720.lan8720ReadPhyId1(lan8720_addr);
     id2 = lan8720.lan8720ReadPhyId2(lan8720_addr);
 
-    // xTaskCreate(&l_motionBurst_task, "l_motionBurst", configMINIMAL_STACK_SIZE, NULL, 1, NULL);
-    // xTaskCreate(&r_motionBurst_task, "r_motionBurst", configMINIMAL_STACK_SIZE, NULL, 1, NULL);
-    xTaskCreate(&uart_ts_task, "usart2", 1024, NULL, 1, NULL);
+    xTaskCreate(&l_motionBurst_task, "l_motionBurst", configMINIMAL_STACK_SIZE, NULL, 1, NULL);
+    xTaskCreate(&r_motionBurst_task, "r_motionBurst", configMINIMAL_STACK_SIZE, NULL, 1, NULL);
+    // xTaskCreate(&uart_ts_task, "usart2", 1024, NULL, 1, NULL);
     xTaskCreate(&network_task, "network_task", 2048, NULL, 1, NULL);
+    xTaskCreate(&udp_send_task, "udp_send", 1024, NULL, 2, NULL);
     
     vTaskStartScheduler();
 }
