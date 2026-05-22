@@ -25,7 +25,6 @@ ADNS3080::ADNS3080(const Adns3080Pins &pins)
 	  _stream_tx(pins.stream_tx),
 	  _stream_rx(pins.stream_rx)
 {
-
 }
 
 // сконфигурируем датчик
@@ -56,46 +55,24 @@ bool ADNS3080::setup(const bool led_mode, const bool resolution)
 		return false;
 }
 
-void ADNS3080::loadSROM(const uint8_t *data, uint16_t length) {
-    // Шаг 1: аппаратный сброс
-    reset();
+// устанавливаем расширенные настройки датчика
+bool ADNS3080::extendedSetup(const bool frame_rate)
+{
+	// создаем маску и записываем ее в соответствующий регистр
+	uint8_t mask = 0b00000000 | frame_rate << 0;
+    writeRegister(ADNS3080_EXTENDED_CONFIG, mask);
 
-    // Шаг 2-4: инициализация перед загрузкой
-    writeRegister(0x20, 0x44);
-    writeRegister(0x24, 0x07);
-    writeRegister(0x24, 0x88);
+	// проверяем конфигурацию
+	delayUs(ADNS3080_T_SWW);
 
-    // Шаг 5: минимум 1 кадровый период (при 2000 fps ~ 500 мкс, берём 1 мс)
-    delayUs(1000);
+	// читаем регистр конфигурации
+	uint8_t config = readRegister(ADNS3080_EXTENDED_CONFIG);
+	delayUs(ADNS3080_T_SWW);
 
-    // Шаг 6: включение режима загрузки SROM
-    writeRegister(0x14, 0x18);  // SROM_Enable
-
-    // Шаг 7: burst-запись массива в регистр SROM_Load (0x60)
-    csLow();
-
-    // Отправляем адрес регистра SROM_Load с битом записи (0x60 | 0x80 = 0xE0)
-    spi_send(_spi, 0x60 | 0x80);
-    while (!(SPI_SR(_spi) & SPI_SR_TXE));
-
-    // Отправляем первый байт
-    spi_send(_spi, data[0]);
-    while (!(SPI_SR(_spi) & SPI_SR_TXE));
-    delayUs(ADNS3080_T_LOAD);  // 10 мкс
-
-    // Отправляем остальные байты с задержкой t_LOAD между ними
-    for (uint16_t i = 1; i < length; i++) {
-        spi_send(_spi, data[i]);
-        while (!(SPI_SR(_spi) & SPI_SR_TXE));
-        delayUs(ADNS3080_T_LOAD);
-    }
-
-    // Дожидаемся завершения передачи на шине
-    while (SPI_SR(_spi) & SPI_SR_BSY);
-
-    // Шаг 8: выход из burst-режима, CS поднять на t_BEXIT
-    csHigh();
-    delayUs(ADNS3080_T_BEXIT);  // 4 мкс
+	if (config == mask)
+		return true;
+	else 
+		return false;
 }
 
 // задержка в микросекундах
@@ -202,11 +179,6 @@ void ADNS3080::
 				   SemaphoreHandle_t &_dma_tx_semaphore, 
 				   SemaphoreHandle_t &_dma_rx_semaphore)
 {
-	// создаем буфферы для получения и отправки данных
-	uint8_t tx_cmd_buf[1] = {ADNS3080_MOTION_BURST};
-	uint8_t tx_dummy_buf[7] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-	uint8_t rx_buf[7];
-
 	csLow();
 
 	// передаем датчику адрес регистра
@@ -263,62 +235,3 @@ void ADNS3080::
     data.shutter = (int16_t)((rx_buf[4] << 8) | rx_buf[5]);
     data.max_pix = rx_buf[6];
 }
-
-
-// запускает передачу данных о перемещении
-// для этого необходимо прочитать данные регистра ADNS3080_MOTION_BURST
-void ADNS3080::displacement(uint8_t *dx, uint8_t *dy)
-{
-	// опускаем линию
-	csLow();
-	
-
-}
-
-// восстанавливаем пиксели следующего кадра:
-void ADNS3080::frameCapture(uint8_t output[ADNS3080_PIXELS][ADNS3080_PIXELS]) 
-{  
-	// первый пиксель:
-	uint8_t pixel = 0;
-
-	// отправляем значение в регистр
-	writeRegister(ADNS3080_FRAME_CAPTURE, 0x83);
-	
-	// опускаем линию и начинаем получение данных
-	csLow();
-
-	// получаем пиксели до тех пор, пока не будет найден первый
-	while((pixel & 0b01000000) == 0) {
-		
-		// отправляем любой бит для получения данных из указанного регистра 
-		spi_send(_spi, 0x00);	
-		while (!(SPI_SR(_spi) & SPI_SR_RXNE));
-
-		// получаем пиксель
-		pixel = spi_read(_spi);
-		
-		delayUs(ADNS3080_T_LOAD);  
-	}
-	
-	// анализируем первый кадр:
-	for(int y = 0; y < ADNS3080_PIXELS; y++) {
-		for(int x = 0; x < ADNS3080_PIXELS; x++) {  
-		
-			// сохраняем и масштабируем полученный кадр
-			output[x][y] = pixel << 2; 
-
-			// получаем следующий пиксель
-			spi_send(_spi, 0x00);
-			while (!(SPI_SR(_spi) & SPI_SR_RXNE));
-
-			pixel = spi_read(_spi);
-			delayUs(ADNS3080_T_LOAD);  
-		}
-	}
-
-	// отключаем линию
-	csHigh();
-
-	// ждем реакцию датчика
-	delayUs(ADNS3080_T_LOAD + ADNS3080_T_BEXIT);
-}   	

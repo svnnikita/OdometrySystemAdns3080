@@ -36,6 +36,7 @@ public:
 		ADNS3080_PRODUCT_ID = 0x00,			// для проверки соединения
 		ADNS3080_MOTION = 0x02,				// чтение, для проверки движения
 		ADNS3080_CONFIGURATION_BITS = 0x0A, // для конфигурации датчика
+		ADNS3080_EXTENDED_CONFIG = 0x0B, 	// расширенная конфигурация
 		ADNS3080_MOTION_CLEAR = 0x12, 		// для обнуления счетчиков движения	
 		ADNS3080_FRAME_CAPTURE = 0x13,		// записываем в регистр 0х83 и получаем изображение
 		ADNS3080_PRODUCT_ID_VALUE = 0x17,	// содержит уникальный идентификатор, 
@@ -47,7 +48,7 @@ public:
 											// Shutter_Lower и Maximum_Pixel
 	};
 
-	// структура с наименованием выводов датчика
+	// структура с параметрами датчика
 	struct Adns3080Pins 
 	{
 		uint32_t cs_gpio_port;		// группа выводов, на которой расположен используемый SPI
@@ -55,6 +56,9 @@ public:
 		uint32_t spi;				// номер используемого SPI
 		uint32_t reset_gpio_port;	// группа выводов, на которой расположен вывод reset
 		uint16_t reset_gpio_pin;	// вывод, на котором расположен reset
+		uint32_t dma;				// адрес dma контроллера
+		uint32_t stream_tx;			// номер потока передачи
+		uint32_t stream_rx;			// номер потока приема
 	};
 
 	// структура со значениями перемещения, качества повехности и т.д.
@@ -75,8 +79,8 @@ public:
 	// инициализация датчика
 	bool setup(const bool led_mode = true, const bool resolution = true);
 
-	// загружаем SROM
-	void loadSROM(const uint8_t *srom_data, uint16_t length);
+	// устанавливаем расширенные настройки датчика
+	bool extendedSetup(const bool frame_rate = true);
 
 	// функция задержки для корректной работы датчика
 	void delayUs(uint16_t delay);
@@ -100,12 +104,6 @@ public:
 		delayUs(ADNS3080_T_IN_RST);      
 	}
 
-	// очищаем регистры смещения, DELTA_X и DELTA_Y
-	void motionClear()
-	{
-		writeRegister(ADNS3080_MOTION_CLEAR, 0x00);
-	} 
-
 	// читаем полные данные о перемещении
 	// для этого необходимо отправить адрес регистра ADNS3080_MOTION_BURST
 	void motionBurst(MotionData &data);
@@ -114,12 +112,6 @@ public:
 				        SemaphoreHandle_t &_dma_tx_semaphore, 
 				        SemaphoreHandle_t &_dma_rx_semaphore);
 
-	// запуск передачи данных только о перемещении
-	void displacement(uint8_t *dx, uint8_t *dy);
-
-	// запуск передачи изображения с датчика
-	void frameCapture(uint8_t[ADNS3080_PIXELS][ADNS3080_PIXELS]);
-
 private:
 	// выводы датчика
 	uint32_t _cs_gpio_port;		// группа выводов, на которой расположен используемый SPI
@@ -127,11 +119,20 @@ private:
 	uint32_t _spi;				// номер используемого SPI
 	uint32_t _reset_gpio_port;	// группа выводов, на котором расположен вывод reset
 	uint16_t _reset_gpio_pin;	// вывод, на котором расположен reset
+	// параметры dma для spi
+	uint32_t _dma;		// адрес dma контроллера
+	uint32_t _stream_tx;	// номер потока передачи
+	uint32_t _stream_rx;	// номер потока приема
 
 	// опускаем chip select для связи с датчиком
 	void csLow() { gpio_clear(_cs_gpio_port, _cs_gpio_pin); }
 	// поднимаем chip select для завершения связи
 	void csHigh() { gpio_set(_cs_gpio_port, _cs_gpio_pin); }
+
+	// создаем буфферы для получения и отправки данных
+	uint8_t tx_cmd_buf[1] = {ADNS3080_MOTION_BURST};
+	uint8_t tx_dummy_buf[7] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+	uint8_t rx_buf[7];
 };
 
 #endif
