@@ -1,3 +1,0 @@
-repository='https://github.com/libopencm3/libopencm3'
-module=''
-tag='origin'

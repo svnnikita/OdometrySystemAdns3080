@@ -1,3 +1,0 @@
-/home/nikita/MACHINE/freertos-proj/build/_deps/llibopencm3-subbuild/CMakeFiles/llibopencm3-populate.dir
-/home/nikita/MACHINE/freertos-proj/build/_deps/llibopencm3-subbuild/CMakeFiles/edit_cache.dir
-/home/nikita/MACHINE/freertos-proj/build/_deps/llibopencm3-subbuild/CMakeFiles/rebuild_cache.dir

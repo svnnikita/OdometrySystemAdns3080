@@ -1,3 +1,0 @@
-repository='https://git.savannah.gnu.org/git/lwip.git'
-module=''
-tag='origin'

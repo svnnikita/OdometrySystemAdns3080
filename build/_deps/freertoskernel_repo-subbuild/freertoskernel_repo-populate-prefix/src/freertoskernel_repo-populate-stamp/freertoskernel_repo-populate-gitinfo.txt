@@ -1,3 +1,0 @@
-repository='https://github.com/FreeRTOS/FreeRTOS-Kernel.git'
-module=''
-tag='origin'
