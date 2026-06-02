@@ -1,0 +1,21 @@
+# ninja log v5
+0	61	1780400093658260092	llibopencm3-populate-prefix/src/llibopencm3-populate-stamp/llibopencm3-populate-mkdir	fa42a11266d427fa
+0	61	1780400093658260092	/home/nikita/MACHINE/freertos-proj/build/_deps/llibopencm3-subbuild/llibopencm3-populate-prefix/src/llibopencm3-populate-stamp/llibopencm3-populate-mkdir	fa42a11266d427fa
+61	6691	1780400100288360052	llibopencm3-populate-prefix/src/llibopencm3-populate-stamp/llibopencm3-populate-download	67c284a9abb31a2c
+61	6691	1780400100288360052	/home/nikita/MACHINE/freertos-proj/build/_deps/llibopencm3-subbuild/llibopencm3-populate-prefix/src/llibopencm3-populate-stamp/llibopencm3-populate-download	67c284a9abb31a2c
+6691	7360	0	llibopencm3-populate-prefix/src/llibopencm3-populate-stamp/llibopencm3-populate-update	29485d59587adaaa
+6691	7360	0	/home/nikita/MACHINE/freertos-proj/build/_deps/llibopencm3-subbuild/llibopencm3-populate-prefix/src/llibopencm3-populate-stamp/llibopencm3-populate-update	29485d59587adaaa
+7360	7377	1780400100974370386	llibopencm3-populate-prefix/src/llibopencm3-populate-stamp/llibopencm3-populate-patch	13cfa33566cace0a
+7360	7377	1780400100974370386	/home/nikita/MACHINE/freertos-proj/build/_deps/llibopencm3-subbuild/llibopencm3-populate-prefix/src/llibopencm3-populate-stamp/llibopencm3-populate-patch	13cfa33566cace0a
+7377	7393	1780400100991370642	llibopencm3-populate-prefix/src/llibopencm3-populate-stamp/llibopencm3-populate-configure	c11ec33802e80702
+7377	7393	1780400100991370642	/home/nikita/MACHINE/freertos-proj/build/_deps/llibopencm3-subbuild/llibopencm3-populate-prefix/src/llibopencm3-populate-stamp/llibopencm3-populate-configure	c11ec33802e80702
+7393	7410	1780400101008370898	llibopencm3-populate-prefix/src/llibopencm3-populate-stamp/llibopencm3-populate-build	d132dad169dfc3f9
+7393	7410	1780400101008370898	/home/nikita/MACHINE/freertos-proj/build/_deps/llibopencm3-subbuild/llibopencm3-populate-prefix/src/llibopencm3-populate-stamp/llibopencm3-populate-build	d132dad169dfc3f9
+7410	7427	1780400101024371139	llibopencm3-populate-prefix/src/llibopencm3-populate-stamp/llibopencm3-populate-install	9839fa378e4b994c
+7410	7427	1780400101024371139	/home/nikita/MACHINE/freertos-proj/build/_deps/llibopencm3-subbuild/llibopencm3-populate-prefix/src/llibopencm3-populate-stamp/llibopencm3-populate-install	9839fa378e4b994c
+7427	7443	1780400101040371380	llibopencm3-populate-prefix/src/llibopencm3-populate-stamp/llibopencm3-populate-test	fe001f21dfd2b92f
+7427	7443	1780400101040371380	/home/nikita/MACHINE/freertos-proj/build/_deps/llibopencm3-subbuild/llibopencm3-populate-prefix/src/llibopencm3-populate-stamp/llibopencm3-populate-test	fe001f21dfd2b92f
+7443	7466	1780400101063371727	CMakeFiles/llibopencm3-populate-complete	c8dbc65febb5688d
+7443	7466	1780400101063371727	llibopencm3-populate-prefix/src/llibopencm3-populate-stamp/llibopencm3-populate-done	c8dbc65febb5688d
+7443	7466	1780400101063371727	/home/nikita/MACHINE/freertos-proj/build/_deps/llibopencm3-subbuild/CMakeFiles/llibopencm3-populate-complete	c8dbc65febb5688d
+7443	7466	1780400101063371727	/home/nikita/MACHINE/freertos-proj/build/_deps/llibopencm3-subbuild/llibopencm3-populate-prefix/src/llibopencm3-populate-stamp/llibopencm3-populate-done	c8dbc65febb5688d

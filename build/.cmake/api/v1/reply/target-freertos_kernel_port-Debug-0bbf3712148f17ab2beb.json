@@ -1,0 +1,212 @@
+{
+	"artifacts" : 
+	[
+		{
+			"path" : "_deps/freertoskernel_repo-build/portable/CMakeFiles/freertos_kernel_port.dir/./GCC/ARM_CM4F/port.c.obj"
+		}
+	],
+	"backtrace" : 1,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_library",
+			"add_compile_options",
+			"include",
+			"project",
+			"target_link_libraries"
+		],
+		"files" : 
+		[
+			"build/_deps/freertoskernel_repo-src/portable/CMakeLists.txt",
+			"cmake/arm-none-eabi-gcc.cmake",
+			"/usr/share/cmake-3.22/Modules/CMakeDetermineSystem.cmake",
+			"CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 18,
+				"parent" : 0
+			},
+			{
+				"file" : 3
+			},
+			{
+				"command" : 3,
+				"file" : 3,
+				"line" : 7,
+				"parent" : 2
+			},
+			{
+				"file" : 2,
+				"parent" : 3
+			},
+			{
+				"command" : 2,
+				"file" : 2,
+				"line" : 124,
+				"parent" : 4
+			},
+			{
+				"file" : 1,
+				"parent" : 5
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 54,
+				"parent" : 6
+			},
+			{
+				"command" : 4,
+				"file" : 0,
+				"line" : 1100,
+				"parent" : 0
+			}
+		]
+	},
+	"compileGroups" : 
+	[
+		{
+			"compileCommandFragments" : 
+			[
+				{
+					"fragment" : "-g"
+				},
+				{
+					"backtrace" : 7,
+					"fragment" : "-ggdb3"
+				},
+				{
+					"backtrace" : 7,
+					"fragment" : "-Os"
+				},
+				{
+					"backtrace" : 7,
+					"fragment" : "-fdata-sections"
+				},
+				{
+					"backtrace" : 7,
+					"fragment" : "-ffunction-sections"
+				},
+				{
+					"backtrace" : 7,
+					"fragment" : "-fno-common"
+				},
+				{
+					"backtrace" : 7,
+					"fragment" : "-fno-exceptions"
+				},
+				{
+					"backtrace" : 7,
+					"fragment" : "-Wall"
+				},
+				{
+					"backtrace" : 7,
+					"fragment" : "-Wextra"
+				},
+				{
+					"backtrace" : 7,
+					"fragment" : "-Wshadow"
+				},
+				{
+					"backtrace" : 7,
+					"fragment" : "-Wdouble-promotion"
+				},
+				{
+					"backtrace" : 7,
+					"fragment" : "-Wundef"
+				},
+				{
+					"backtrace" : 7,
+					"fragment" : "-Wconversion"
+				},
+				{
+					"backtrace" : 8,
+					"fragment" : "-mcpu=cortex-m4"
+				},
+				{
+					"backtrace" : 8,
+					"fragment" : "-mthumb"
+				},
+				{
+					"backtrace" : 8,
+					"fragment" : "-mfpu=fpv4-sp-d16"
+				},
+				{
+					"backtrace" : 8,
+					"fragment" : "-mfloat-abi=hard"
+				}
+			],
+			"defines" : 
+			[
+				{
+					"backtrace" : 8,
+					"define" : "STM32F4 -DSTM32F4CCM -DSTM32F407VG"
+				},
+				{
+					"backtrace" : 8,
+					"define" : "projCOVERAGE_TEST=0"
+				}
+			],
+			"includes" : 
+			[
+				{
+					"backtrace" : 8,
+					"path" : "/home/nikita/MACHINE/freertos-proj/build/_deps/freertoskernel_repo-src/portable/GCC/ARM_CM4F"
+				},
+				{
+					"backtrace" : 8,
+					"path" : "/home/nikita/MACHINE/freertos-proj/build/_deps/freertoskernel_repo-src/include/."
+				},
+				{
+					"backtrace" : 8,
+					"path" : "/home/nikita/MACHINE/freertos-proj/build/_deps/llibopencm3-src/include"
+				},
+				{
+					"backtrace" : 8,
+					"isSystem" : true,
+					"path" : "/home/nikita/MACHINE/freertos-proj/src"
+				}
+			],
+			"language" : "C",
+			"sourceIndexes" : 
+			[
+				0
+			]
+		}
+	],
+	"id" : "freertos_kernel_port::@950a02151c669b74db27",
+	"name" : "freertos_kernel_port",
+	"paths" : 
+	{
+		"build" : "_deps/freertoskernel_repo-build/portable",
+		"source" : "build/_deps/freertoskernel_repo-src/portable"
+	},
+	"sourceGroups" : 
+	[
+		{
+			"name" : "Source Files",
+			"sourceIndexes" : 
+			[
+				0
+			]
+		}
+	],
+	"sources" : 
+	[
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "build/_deps/freertoskernel_repo-src/portable/GCC/ARM_CM4F/port.c",
+			"sourceGroupIndex" : 0
+		}
+	],
+	"type" : "OBJECT_LIBRARY"
+}

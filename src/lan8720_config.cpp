@@ -29,7 +29,8 @@ void Lan8720Config::readUid()
     char buffer[64];
     uint32_t len = sprintf(buffer, "UID %04x-%04x-%08lx-%08lx\n", 
                     *idBase0, *idBase1, (unsigned long)*idBase2, (unsigned long)*idBase3);
-    // Отправка через USART1 (предварительно должен быть инициализирован)
+    
+    // отправка через USART2 (предварительно должен быть инициализирован)
     for (uint32_t i = 0; i < len; i++) {
         usart_send_blocking(USART2, buffer[i]);
     }

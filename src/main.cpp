@@ -58,6 +58,27 @@ ADNS3080 r_camera = ADNS3080(r_camera_pins);
 // структура данных о перемещении
 ADNS3080::MotionData l_data, r_data;
 
+// создадим выровненную структуру с данными для отправки
+#pragma pack(push, 1)
+struct SensorPacket {
+    // левый датчик
+    uint8_t  l_motion;
+    int8_t   l_dx;
+    int8_t   l_dy;
+    uint8_t  l_squal;
+    uint16_t l_shutter;
+    uint8_t  l_max_pix;
+    // правый датчик
+    uint8_t  r_motion;
+    int8_t   r_dx;
+    int8_t   r_dy;
+    uint8_t  r_squal;
+    uint16_t r_shutter;
+    uint8_t  r_max_pix;
+} pkt;
+// возвращаем выравнивание
+#pragma pack(pop)
+
 static SemaphoreHandle_t uart_tx_semaphore = NULL;
 
 // создаем глобальный буффер для строки
@@ -74,7 +95,7 @@ void uart_ts_task(void *pvParameters)
    
     while (1) {
         if (xSemaphoreTake(uart_tx_semaphore, portMAX_DELAY) == pdTRUE) {
-            // // формируем строку
+            // формируем строку
             uint32_t str = 
                 sprintf(buffer, 
                         "L - M: %d, X: %4d, Y: %4d, SQ: %3u, SH: %d, MP: %u\r\nR - M: %d, X: %4d, Y: %4d, SQ: %3u, SH: %d, MP: %u\r\n", 
@@ -124,7 +145,8 @@ void l_motionBurst_task(void *pvParameters)
     l_dma_tx_semaphore = xSemaphoreCreateBinary();
     l_dma_rx_semaphore = xSemaphoreCreateBinary();
 
-    const TickType_t period = pdMS_TO_TICKS(1); // опрос каждую 1 мс
+    const TickType_t period = pdMS_TO_TICKS(5); // опрос каждые 5 мс
+    // const TickType_t period = pdMS_TO_TICKS(0.5); // опрос каждые 500 мкс
 
     for (;;) {
         l_camera.motionBurstDma(l_data, l_dma_tx_semaphore, l_dma_rx_semaphore);
@@ -178,7 +200,8 @@ void r_motionBurst_task(void *pvParameters)
     r_dma_tx_semaphore = xSemaphoreCreateBinary();
     r_dma_rx_semaphore = xSemaphoreCreateBinary();
 
-    const TickType_t period = pdMS_TO_TICKS(1); // опрос каждую 1 мс
+    const TickType_t period = pdMS_TO_TICKS(5); // опрос каждые 5 мс
+    // const TickType_t period = pdMS_TO_TICKS(0.5); // опрос каждые 500 мКс
 
     for (;;) {
         r_camera.motionBurstDma(r_data, r_dma_tx_semaphore, r_dma_rx_semaphore);
@@ -209,7 +232,6 @@ void dma1_stream0_isr()
     if (dma_get_interrupt_flag(DMA1, DMA_STREAM0, DMA_TCIF)) {
         dma_clear_interrupt_flags(DMA1, DMA_STREAM0, DMA_TCIF);
 
-        // освобождаем семафор
         // освобождаем семафор и отдаем его задаче
         BaseType_t woken = pdFALSE;
 
@@ -220,55 +242,6 @@ void dma1_stream0_isr()
         portYIELD_FROM_ISR(woken);
     }
 }
-
-// создаем семафор для работы ethernet
-// SemaphoreHandle_t eth_rx_semaphore;
-
-// обработчик прерывания ethernet
-// extern "C" void eth_isr(void) {
-//      BaseType_t woken = pdFALSE;
-//     uint32_t status = ETH_DMASR;
-//     if (status & (ETH_DMASR_RS | ETH_DMASR_NIS | ETH_DMASR_RBUS)) {
-//         ETH_DMASR = status;   // запись '1' сбрасывает биты
-//         xSemaphoreGiveFromISR(eth_rx_semaphore, &woken);
-//     }
-//     portYIELD_FROM_ISR(woken);
-
-
-//     // BaseType_t higher_task_woken = pdFALSE;
-
-//     // // Проверяем, что прерывание произошло именно из-за приёма пакета
-//     // if (eth_irq_ack_pending(ETH_DMASR_RS)) {   // RS – Receive Status
-//     //     // Даём семафор, который разблокирует задачу обработки пакетов
-//     //     xSemaphoreGiveFromISR(eth_rx_semaphore, &higher_task_woken);
-//     // }
-
-//     // // Если нужно обработать другие источники прерывания (ошибки, передача), добавить их
-
-//     // // Принудительно переключаем контекст, если более приоритетная задача стала готовой
-//     // portYIELD_FROM_ISR(higher_task_woken);
-// }
-
-// // задача freertos, обрабатывающая принятые пакеты
-// static void ethernetif_input_task(void *arg)
-// {
-//     struct netif *netif = (struct netif*)arg;
-
-//     // ждем сигнал от прерывания
-//     while (1) {
-//         xSemaphoreTake(eth_rx_semaphore, portMAX_DELAY);
-
-//         while (1) {
-//             struct pbuf *p = low_level_input(netif);
-//             if (p == NULL) break;   // пакетов больше нет
-
-//             // передаём пакет в LwIP (через tcpip_input, который ставит в очередь tcpip_thread)
-//             if (netif->input(p, netif) != ERR_OK) {
-//                 pbuf_free(p);
-//             }
-//         } 
-//     }
-// }
 
 // задача опроса
 static void polling_rx_task(void *arg) {
@@ -298,9 +271,6 @@ static void polling_rx_task(void *arg) {
 
 // создаем задачу, которая инициализирует и поддерживает сетевой стек lwip
 void network_task(void *arg) {
-    // создаём семафор и задачу для приёма
-    // eth_rx_semaphore = xSemaphoreCreateBinary();
-    
     // запускаем внутреннюю системную задачу lwip
     // задача обрабатывает все пакеты, таймеры,
     // очереди сообщений и вызовы api
@@ -325,9 +295,6 @@ void network_task(void *arg) {
     
     // создаем задачу
     xTaskCreate(polling_rx_task, "poll_rx", 2048, &netif, 3, NULL);
-    // if (eth_rx_semaphore != NULL) {
-    //     xTaskCreate(ethernetif_input_task, "eth_rx", 2048, &netif, 3, NULL);
-    // }
     
     while (1) vTaskDelay(pdMS_TO_TICKS(1000));
 }
@@ -335,10 +302,8 @@ void network_task(void *arg) {
 // создадим функцию отправки данных по udp
 static void udp_send_task(void *arg)
 {
+    // ждем 1 с для инициализации стека
     vTaskDelay(pdMS_TO_TICKS(1000));
-
-    // обозначаем, что мы вошли в функцию
-    usart_send_blocking(USART2, 'U');
 
     // указатель на блок управления udp
     struct udp_pcb *udp_pcb;
@@ -357,20 +322,30 @@ static void udp_send_task(void *arg)
 
     // бесконечный цикл отправки
     while (1) {
-        char buffer[128];
-        uint32_t len = 
-                sprintf(buffer, 
-                        "L - M: %d, X: %4d, Y: %4d, SQ: %3u, SH: %d, MP: %u\r\nR - M: %d, X: %4d, Y: %4d, SQ: %3u, SH: %d, MP: %u\r\n", 
-                        l_data.motion, l_data.dx, l_data.dy, 
-                        l_data.squal, l_data.shutter, l_data.max_pix,
-                        r_data.motion, r_data.dx, r_data.dy, 
-                        r_data.squal, r_data.shutter, r_data.max_pix);
+        // заполняем и отправляем структуру
+        // левый датчик
+        pkt.l_motion = l_data.motion;
+        // приводим значения смещения к системе
+        // координат робота
+        pkt.l_dx = -l_data.dx;
+        pkt.l_dy = -l_data.dy;
+        pkt.l_squal = l_data.squal;
+        pkt.l_shutter = l_data.shutter;
+        pkt.l_max_pix = l_data.max_pix;
+        // правый датчик
+        pkt.r_motion = r_data.motion;
+        // аналогично
+        pkt.r_dx = r_data.dx;
+        pkt.r_dy = r_data.dy;
+        pkt.r_squal = r_data.squal;
+        pkt.r_shutter = r_data.shutter;
+        pkt.r_max_pix = r_data.max_pix;
 
         // создаем пакетный буффер для отправки
-        struct pbuf *p = pbuf_alloc(PBUF_TRANSPORT, len, PBUF_RAM);
+        struct pbuf *p = pbuf_alloc(PBUF_TRANSPORT, sizeof(pkt), PBUF_RAM);
         // проверяем
         if (p != NULL) {
-            memcpy(p->payload, buffer, len);
+            memcpy(p->payload, &pkt, sizeof(pkt));
             // отправляем udp датаграмму на порт 8888
             err = udp_sendto(udp_pcb, p, &remote_ip, 8888);
             pbuf_free(p);
@@ -381,7 +356,8 @@ static void udp_send_task(void *arg)
             }
 
         }
-        vTaskDelay(pdMS_TO_TICKS(1));
+        // отправляем данные с периодом 20 мс
+        vTaskDelay(pdMS_TO_TICKS(20));
     }
 }
 
@@ -393,22 +369,27 @@ int main () {
     // включаем подсветку и устанавливаем высокое разрешение
     volatile uint8_t l_setup = l_camera.setup(true, true);
     l_camera.delayUs(ADNS3080_T_SWW);
-    
     volatile uint8_t r_setup = r_camera.setup(true, true);
 	r_camera.delayUs(ADNS3080_T_SWW);
 
-    // проверяем корректность подключения
-    if (l_setup == true && r_setup == true) {
-        usart_send_blocking(USART2, 't');
-    } else { 
-        usart_send_blocking(USART2, 'f');
-    }
+    // установим динамический фреймрейт для обеих камер
+    volatile uint8_t l_ex_setup = l_camera.extendedSetup(false);
+    l_camera.delayUs(ADNS3080_T_SWW);
+    volatile uint8_t r_ex_setup = r_camera.extendedSetup(false);
+    l_camera.delayUs(ADNS3080_T_SWW);
+
+    // // проверяем корректность подключения
+    // if (l_setup == true && r_setup == true && l_ex_setup == true && r_ex_setup == true) {
+    //     usart_send_blocking(USART2, 't');
+    // } else { 
+    //     usart_send_blocking(USART2, 'f');
+    // }
 
     // сконфигурируем lan8720
     // прочитаем id
-    uint8_t lan8720_addr = 0;
-    id1 = lan8720.lan8720ReadPhyId1(lan8720_addr);
-    id2 = lan8720.lan8720ReadPhyId2(lan8720_addr);
+    // uint8_t lan8720_addr = 0;
+    // id1 = lan8720.lan8720ReadPhyId1(lan8720_addr);
+    // id2 = lan8720.lan8720ReadPhyId2(lan8720_addr);
 
     xTaskCreate(&l_motionBurst_task, "l_motionBurst", configMINIMAL_STACK_SIZE, NULL, 1, NULL);
     xTaskCreate(&r_motionBurst_task, "r_motionBurst", configMINIMAL_STACK_SIZE, NULL, 1, NULL);

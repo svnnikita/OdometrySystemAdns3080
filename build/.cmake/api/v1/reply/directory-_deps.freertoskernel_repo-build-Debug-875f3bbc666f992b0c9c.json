@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "_deps/freertoskernel_repo-build",
+		"source" : "build/_deps/freertoskernel_repo-src"
+	}
+}

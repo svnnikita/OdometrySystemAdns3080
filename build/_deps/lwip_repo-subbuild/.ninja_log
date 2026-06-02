@@ -1,0 +1,21 @@
+# ninja log v5
+0	62	1780400169463394096	lwip_repo-populate-prefix/src/lwip_repo-populate-stamp/lwip_repo-populate-mkdir	68615562fbd4737a
+0	62	1780400169463394096	/home/nikita/MACHINE/freertos-proj/build/_deps/lwip_repo-subbuild/lwip_repo-populate-prefix/src/lwip_repo-populate-stamp/lwip_repo-populate-mkdir	68615562fbd4737a
+62	6157	1780400175558484469	lwip_repo-populate-prefix/src/lwip_repo-populate-stamp/lwip_repo-populate-download	e8269e36385089ad
+62	6157	1780400175558484469	/home/nikita/MACHINE/freertos-proj/build/_deps/lwip_repo-subbuild/lwip_repo-populate-prefix/src/lwip_repo-populate-stamp/lwip_repo-populate-download	e8269e36385089ad
+6157	6172	0	lwip_repo-populate-prefix/src/lwip_repo-populate-stamp/lwip_repo-populate-update	96df6db3c992d0a8
+6157	6172	0	/home/nikita/MACHINE/freertos-proj/build/_deps/lwip_repo-subbuild/lwip_repo-populate-prefix/src/lwip_repo-populate-stamp/lwip_repo-populate-update	96df6db3c992d0a8
+6172	6184	1780400175585484869	lwip_repo-populate-prefix/src/lwip_repo-populate-stamp/lwip_repo-populate-patch	328694dc952b4213
+6172	6184	1780400175585484869	/home/nikita/MACHINE/freertos-proj/build/_deps/lwip_repo-subbuild/lwip_repo-populate-prefix/src/lwip_repo-populate-stamp/lwip_repo-populate-patch	328694dc952b4213
+6184	6199	1780400175600485091	lwip_repo-populate-prefix/src/lwip_repo-populate-stamp/lwip_repo-populate-configure	5f61a36a9a961ab8
+6184	6199	1780400175600485091	/home/nikita/MACHINE/freertos-proj/build/_deps/lwip_repo-subbuild/lwip_repo-populate-prefix/src/lwip_repo-populate-stamp/lwip_repo-populate-configure	5f61a36a9a961ab8
+6199	6212	1780400175613485284	lwip_repo-populate-prefix/src/lwip_repo-populate-stamp/lwip_repo-populate-build	eedb6b8869f7fb07
+6199	6212	1780400175613485284	/home/nikita/MACHINE/freertos-proj/build/_deps/lwip_repo-subbuild/lwip_repo-populate-prefix/src/lwip_repo-populate-stamp/lwip_repo-populate-build	eedb6b8869f7fb07
+6212	6227	1780400175628485506	lwip_repo-populate-prefix/src/lwip_repo-populate-stamp/lwip_repo-populate-install	29002706d8ca8ff0
+6212	6227	1780400175628485506	/home/nikita/MACHINE/freertos-proj/build/_deps/lwip_repo-subbuild/lwip_repo-populate-prefix/src/lwip_repo-populate-stamp/lwip_repo-populate-install	29002706d8ca8ff0
+6227	6241	1780400175641485699	lwip_repo-populate-prefix/src/lwip_repo-populate-stamp/lwip_repo-populate-test	2145e6ff4791bbf3
+6227	6241	1780400175641485699	/home/nikita/MACHINE/freertos-proj/build/_deps/lwip_repo-subbuild/lwip_repo-populate-prefix/src/lwip_repo-populate-stamp/lwip_repo-populate-test	2145e6ff4791bbf3
+6241	6264	1780400175665486054	CMakeFiles/lwip_repo-populate-complete	3796916e56d1f293
+6241	6264	1780400175665486054	lwip_repo-populate-prefix/src/lwip_repo-populate-stamp/lwip_repo-populate-done	3796916e56d1f293
+6241	6264	1780400175665486054	/home/nikita/MACHINE/freertos-proj/build/_deps/lwip_repo-subbuild/CMakeFiles/lwip_repo-populate-complete	3796916e56d1f293
+6241	6264	1780400175665486054	/home/nikita/MACHINE/freertos-proj/build/_deps/lwip_repo-subbuild/lwip_repo-populate-prefix/src/lwip_repo-populate-stamp/lwip_repo-populate-done	3796916e56d1f293

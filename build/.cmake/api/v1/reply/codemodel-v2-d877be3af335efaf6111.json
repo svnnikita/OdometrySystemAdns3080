@@ -1,0 +1,293 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1,
+						2,
+						6,
+						8,
+						9,
+						10
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-.-Debug-f5ebdc15457944623624.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"projectIndex" : 0,
+					"source" : "."
+				},
+				{
+					"build" : "libs/libopencm3",
+					"jsonFile" : "directory-libs.libopencm3-Debug-8db06378c1d6cd671fb8.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "libs/libopencm3"
+				},
+				{
+					"build" : "libs/freertos",
+					"childIndexes" : 
+					[
+						3
+					],
+					"jsonFile" : "directory-libs.freertos-Debug-a96d88dad4b5d0e56be8.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "libs/freertos"
+				},
+				{
+					"build" : "_deps/freertoskernel_repo-build",
+					"childIndexes" : 
+					[
+						4,
+						5
+					],
+					"jsonFile" : "directory-_deps.freertoskernel_repo-build-Debug-875f3bbc666f992b0c9c.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.15"
+					},
+					"parentIndex" : 2,
+					"projectIndex" : 0,
+					"source" : "build/_deps/freertoskernel_repo-src",
+					"targetIndexes" : 
+					[
+						3
+					]
+				},
+				{
+					"build" : "_deps/freertoskernel_repo-build/include",
+					"jsonFile" : "directory-_deps.freertoskernel_repo-build.include-Debug-4854c73a9e5951eae485.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.15"
+					},
+					"parentIndex" : 3,
+					"projectIndex" : 0,
+					"source" : "build/_deps/freertoskernel_repo-src/include"
+				},
+				{
+					"build" : "_deps/freertoskernel_repo-build/portable",
+					"jsonFile" : "directory-_deps.freertoskernel_repo-build.portable-Debug-7076832931a1f9e8b660.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.15"
+					},
+					"parentIndex" : 3,
+					"projectIndex" : 0,
+					"source" : "build/_deps/freertoskernel_repo-src/portable",
+					"targetIndexes" : 
+					[
+						4
+					]
+				},
+				{
+					"build" : "libs/lwip",
+					"childIndexes" : 
+					[
+						7
+					],
+					"jsonFile" : "directory-libs.lwip-Debug-f4cef06cc224af27ee46.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "libs/lwip"
+				},
+				{
+					"build" : "_deps/lwip_repo-build",
+					"jsonFile" : "directory-_deps.lwip_repo-build-Debug-c06f9af8b346436f866d.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.10"
+					},
+					"parentIndex" : 6,
+					"projectIndex" : 1,
+					"source" : "build/_deps/lwip_repo-src",
+					"targetIndexes" : 
+					[
+						0,
+						5,
+						6,
+						7
+					]
+				},
+				{
+					"build" : "src",
+					"jsonFile" : "directory-src-Debug-b6cf2213fc5053b67c22.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "src",
+					"targetIndexes" : 
+					[
+						2
+					]
+				},
+				{
+					"build" : "flash_n_debug",
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-flash_n_debug-Debug-d2ffddf518be476ee681.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "flash_n_debug",
+					"targetIndexes" : 
+					[
+						1
+					]
+				},
+				{
+					"build" : "doc",
+					"jsonFile" : "directory-doc-Debug-00ee67dbe228fd23eb89.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "doc"
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"childIndexes" : 
+					[
+						1
+					],
+					"directoryIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4,
+						5,
+						6,
+						8,
+						9,
+						10
+					],
+					"name" : "freertos-proj",
+					"targetIndexes" : 
+					[
+						1,
+						2,
+						3,
+						4
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						7
+					],
+					"name" : "lwIP",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						0,
+						5,
+						6,
+						7
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 7,
+					"id" : "dist::@e0c58df61f24801b3c15",
+					"jsonFile" : "target-dist-Debug-3ab21757bd6c515da5d6.json",
+					"name" : "dist",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 9,
+					"id" : "flash::@478a317a7837d8465139",
+					"jsonFile" : "target-flash-Debug-16a2910b47e6c72edab0.json",
+					"name" : "flash",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 8,
+					"id" : "freertos-proj::@145eef247bfb46b6828c",
+					"jsonFile" : "target-freertos-proj-Debug-8a9f2170a6ed9fe3f953.json",
+					"name" : "freertos-proj",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "freertos_kernel::@5f7d50611151bade977b",
+					"jsonFile" : "target-freertos_kernel-Debug-602db69f15d211967b9e.json",
+					"name" : "freertos_kernel",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 5,
+					"id" : "freertos_kernel_port::@950a02151c669b74db27",
+					"jsonFile" : "target-freertos_kernel_port-Debug-0bbf3712148f17ab2beb.json",
+					"name" : "freertos_kernel_port",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 7,
+					"id" : "lwipallapps::@e0c58df61f24801b3c15",
+					"jsonFile" : "target-lwipallapps-Debug-72533010c145a2863786.json",
+					"name" : "lwipallapps",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 7,
+					"id" : "lwipcore::@e0c58df61f24801b3c15",
+					"jsonFile" : "target-lwipcore-Debug-49ef2b9bff90a88c5107.json",
+					"name" : "lwipcore",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 7,
+					"id" : "lwipmbedtls::@e0c58df61f24801b3c15",
+					"jsonFile" : "target-lwipmbedtls-Debug-03b0c20a03e4bf9f2f30.json",
+					"name" : "lwipmbedtls",
+					"projectIndex" : 1
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "/home/nikita/MACHINE/freertos-proj/build",
+		"source" : "/home/nikita/MACHINE/freertos-proj"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 3
+	}
+}

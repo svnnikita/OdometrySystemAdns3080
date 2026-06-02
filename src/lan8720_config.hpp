@@ -35,6 +35,7 @@ public:
     // проверяем, установлен ли линк
     uint8_t lan8720WaitLink(uint8_t phy_addr, uint32_t timeout);
 
+    // включаем автоопределение
     void lan8720AutoNegEnable(uint8_t phy_addr)
     {
         // BCR bit12 = Auto-Negotiation Enable

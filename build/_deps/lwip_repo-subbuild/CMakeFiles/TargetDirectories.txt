@@ -1,0 +1,3 @@
+/home/nikita/MACHINE/freertos-proj/build/_deps/lwip_repo-subbuild/CMakeFiles/lwip_repo-populate.dir
+/home/nikita/MACHINE/freertos-proj/build/_deps/lwip_repo-subbuild/CMakeFiles/edit_cache.dir
+/home/nikita/MACHINE/freertos-proj/build/_deps/lwip_repo-subbuild/CMakeFiles/rebuild_cache.dir

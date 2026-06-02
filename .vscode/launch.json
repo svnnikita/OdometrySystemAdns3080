@@ -1,0 +1,24 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "cwd": "${workspaceRoot}",
+            "executable": "${workspaceFolder}/build/firmware",
+            "name": "Debug with OpenOCD",
+            "request": "launch",
+            "type": "cortex-debug",
+            "servertype": "openocd",
+            "svdFile": "./flash_n_debug/stm32f407.svd",
+            "configFiles": [
+                "interface/stlink.cfg", 
+                "target/stm32f4x.cfg"
+            ],
+            "searchDir": [],
+            "runToEntryPoint": "main",
+            "showDevDebugOutput": "none"
+        }
+    ]
+}

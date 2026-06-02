@@ -6,20 +6,20 @@ extern "C" {
     #include "lwip/netif.h"
     #include "lwip/etharp.h"
     #include "lwip/pbuf.h"
-    #include "lwip/tcpip.h"
+    // #include "lwip/tcpip.h"
 }
 
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/gpio.h>
-#include <libopencm3/stm32/usart.h>
+// #include <libopencm3/stm32/usart.h>
 #include <libopencm3/stm32/syscfg.h>
 #include <libopencm3/ethernet/mac.h>
 #include <libopencm3/ethernet/phy.h>
 #include <libopencm3/cm3/nvic.h>
 #include "netif/ethernet.h"
 
-#include "FreeRTOS.h"
-#include "semphr.h"
+// #include "FreeRTOS.h"
+// #include "semphr.h"
 
 #include "ethernetif.h"
 #include "lan8720_config.hpp"
@@ -28,24 +28,28 @@ extern "C" {
 #include <cstdio>
 
 // конфигурация драйвера
-#define ETH_RX_DESC_CNT     2
-#define ETH_TX_DESC_CNT     16
-#define ETH_RX_BUF_SIZE     1524
-#define ETH_TX_BUF_SIZE     1524
+constexpr uint8_t ETH_RX_DESC_CNT = 2;
+constexpr uint8_t ETH_TX_DESC_CNT = 16;
+constexpr uint16_t ETH_RX_BUF_SIZE = 1524;
+constexpr uint16_t ETH_TX_BUF_SIZE = 1524;
 
 // устанавливаем размер дескриптора
-#define ETH_DESC_SIZE       16
+constexpr uint8_t ETH_DESC_SIZE = 16;
 
 // общий размер буфера
-#define ETH_BUFFER_SIZE  ((ETH_TX_DESC_CNT + ETH_RX_DESC_CNT) * ETH_DESC_SIZE + \
+constexpr uint32_t ETH_BUFFER_SIZE  ((ETH_TX_DESC_CNT + ETH_RX_DESC_CNT) * ETH_DESC_SIZE + \
                           ETH_TX_DESC_CNT * ETH_TX_BUF_SIZE + \
-                          ETH_RX_DESC_CNT * ETH_RX_BUF_SIZE)
+                          ETH_RX_DESC_CNT * ETH_RX_BUF_SIZE);
 
 // выровненный общий буфер
 static __attribute__((aligned(4))) uint8_t eth_dma_buffer[ETH_BUFFER_SIZE];
 
+#ifdef __cplusplus
+extern "C" 
+{
+#endif
 // инициализируем аппаратуру на низком уровне
-extern "C" void low_level_init(struct netif *netif)
+void low_level_init(struct netif *netif)
 {
     // создаем объект драйвера
     Lan8720Config phy;
@@ -113,60 +117,81 @@ bool safe_eth_tx(uint8_t *data, uint32_t len) {
 }
 
 // отправляем пакет
-extern "C" err_t low_level_output(struct netif *netif, struct pbuf *p)
+// в качестве параметром функция принимает указатели:
+// - на структуру lwip (принимает, но не использует)
+// - на цепочку буферов pbuf, содержащую пакет для отправки
+err_t low_level_output(struct netif *netif, struct pbuf *p)
 {
     // выводим отладочное сообщение
-    usart_send_blocking(USART2, 'T');
+    // usart_send_blocking(USART2, 'T');
 
     // копируем цепочку pbuf в линейный массив
+    // создаем выровненный буфер для формирования линейного кадра
     static __attribute__((aligned(4))) uint8_t tx_buffer[ETH_TX_BUF_SIZE];
+    // суммарная длина ehternet-кадра
     uint16_t total_len = 0;
+
+    // структура для копирования принятого пакета
     struct pbuf *q;
 
+    // копируем пакет и анализируем его
     for (q = p; q != NULL; q = q->next) {
+        // если общая длина превышает размер буфера 
         if (total_len + q->len > ETH_TX_BUF_SIZE) {
+            // то возвращается ошибка
             return ERR_BUF;
         }
+        // копируем данные из pbuf в зависимости от величины total_len
         memcpy(tx_buffer + total_len, q->payload, q->len);
+        // увеличиваем total_len на очередного фрагмента
         total_len += q->len;
     }
 
+    // если длина кадра меньше 60, он заполняется нулями
     if (total_len < 60) {
         memset(tx_buffer + total_len, 0, 60 - total_len);
         total_len = 60;
     }
 
+    // отправляем кадр и выводим отладочные сообщения
     if (!safe_eth_tx(tx_buffer, total_len)) {
-        usart_send_blocking(USART2, 'E');
+        // usart_send_blocking(USART2, 'E');
         return ERR_BUF;
-    } else {
-        usart_send_blocking(USART2, 'O');
-    }
-    
+    } 
+    // else 
+    //     usart_send_blocking(USART2, 'O');
     return ERR_OK;
 }
 
 // принимаем пакет из dma в pbuf
-extern "C" struct pbuf *low_level_input(struct netif *netif)
+struct pbuf *low_level_input(struct netif *netif)
 {
+    // создаем временный буффер, в который будем копировать принятые данные
     uint8_t dummy_buf[ETH_RX_BUF_SIZE];
+
     uint32_t len = 0;
+    // копируем данные в буффер, записываем его реальную длину
+    // и освобождаем дескриптор
     bool res = eth_rx(dummy_buf, &len, ETH_RX_BUF_SIZE);
+    // проверяем результат
     if (!res) return NULL;
 
     // отправляем букву р, когда пакет принят
     // usart_send_blocking(USART2, 'R');
 
+    // выделяем буффер pbuf типа PBUF_RAW
     struct pbuf *p = pbuf_alloc(PBUF_RAW, len, PBUF_POOL);
+    // если pbuf успешно выделен, копируем данные
     if (p != NULL) {
         memcpy(p->payload, dummy_buf, len);
     }
-    
-    return p;   // возвращаем p, а вызов netif->input будет в задаче
+
+    // возвращаем p, а вызов netif->input будет в задаче
+    return p;   
 }
 
 // инициализируем интерфейс
-extern "C" err_t ethernetif_init(struct netif *netif)
+err_t ethernetif_init(struct netif *netif)
 {
     // устанавливаем mac адрес
     netif->hwaddr_len = 6;
@@ -182,3 +207,7 @@ extern "C" err_t ethernetif_init(struct netif *netif)
 
     return ERR_OK;
 }
+
+#ifdef __cplusplus
+}
+#endif
