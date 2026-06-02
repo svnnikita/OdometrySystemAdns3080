@@ -112,6 +112,9 @@ public:
 				        SemaphoreHandle_t &_dma_tx_semaphore, 
 				        SemaphoreHandle_t &_dma_rx_semaphore);
 
+	// читаем изображение с датчика
+	void frameCapture(uint8_t recv_pixels[ADNS3080_PIXELS][ADNS3080_PIXELS]);
+
 private:
 	// выводы датчика
 	uint32_t _cs_gpio_port;		// группа выводов, на которой расположен используемый SPI

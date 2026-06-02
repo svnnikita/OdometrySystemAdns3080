@@ -79,11 +79,32 @@ struct SensorPacket {
 // возвращаем выравнивание
 #pragma pack(pop)
 
+// семафор для задача отправки данных по usart2
 static SemaphoreHandle_t uart_tx_semaphore = NULL;
+
+// семафор готовности нового кадра
+static SemaphoreHandle_t frame_ready_semaphore = NULL;
+// семафор отправки строки
+// static SemaphoreHandle_t dma_tx_done_semaphore = NULL;
 
 // создаем глобальный буффер для строки
 char buffer[128];
 uint16_t id1, id2;
+
+// буфферы для данных кадра в режиме frame capture
+uint8_t recv_pixels[ADNS3080_PIXELS][ADNS3080_PIXELS];
+uint8_t local_frame[ADNS3080_PIXELS][ADNS3080_PIXELS];
+
+
+// создаем задачу для захвата кадра с датчика
+void frame_capture_task(void *pvParameters)
+{
+    while (true) {
+        l_camera.frameCapture(recv_pixels);
+        xSemaphoreGive(frame_ready_semaphore);
+        vTaskDelay(pdMS_TO_TICKS(100));
+    }
+}
 
 // создаем задачу
 void uart_ts_task(void *pvParameters)
@@ -94,22 +115,38 @@ void uart_ts_task(void *pvParameters)
     xSemaphoreGive(uart_tx_semaphore);
    
     while (1) {
-        if (xSemaphoreTake(uart_tx_semaphore, portMAX_DELAY) == pdTRUE) {
-            // формируем строку
-            uint32_t str = 
-                sprintf(buffer, 
-                        "L - M: %d, X: %4d, Y: %4d, SQ: %3u, SH: %d, MP: %u\r\nR - M: %d, X: %4d, Y: %4d, SQ: %3u, SH: %d, MP: %u\r\n", 
-                        l_data.motion, l_data.dx, l_data.dy, 
-                        l_data.squal, l_data.shutter, l_data.max_pix,
-                        r_data.motion, r_data.dx, r_data.dy, 
-                        r_data.squal, r_data.shutter, r_data.max_pix);
+        if (xSemaphoreTake(frame_ready_semaphore, portMAX_DELAY) == pdTRUE) {
+            // копируем кадр в локальный буфер
+            memcpy(local_frame, recv_pixels, sizeof(local_frame));
 
-            // настраиваем адреса и запускаем канал DMA
-            dma_set_memory_address(DMA1, DMA_STREAM6, (uint32_t)buffer);
-            dma_set_number_of_data(DMA1, DMA_STREAM6, str);
+            // отправляем кадр
+            for (uint8_t y = 0; y < ADNS3080_PIXELS; y++) {
+                uint32_t pose = 0;
+                for (uint8_t x = 0; x < ADNS3080_PIXELS; x++) {
+                    buffer[pose++] = pixelSymbol(local_frame[y][x]);
+                    buffer[pose++] = ' ';
+                }
+                buffer[pose++] = '\r';
+                buffer[pose++] = '\n';
+
+                xSemaphoreTake(uart_tx_semaphore, portMAX_DELAY);
+
+                // настраиваем адреса и запускаем канал DMA
+                dma_set_memory_address(DMA1, DMA_STREAM6, (uint32_t)buffer);
+                dma_set_number_of_data(DMA1, DMA_STREAM6, pose);
+                dma_enable_stream(DMA1, DMA_STREAM6);
+
+                xSemaphoreTake(uart_tx_semaphore, portMAX_DELAY);
+            }
+
+            // отправляем пустую строку для разделения кадров
+            const char *newline = "\r\n";
+            xSemaphoreTake(uart_tx_semaphore, portMAX_DELAY);
+            dma_set_memory_address(DMA1, DMA_STREAM6, (uint32_t)newline);
+            dma_set_number_of_data(DMA1, DMA_STREAM6, 2);
             dma_enable_stream(DMA1, DMA_STREAM6);
-
-            vTaskDelay(pdMS_TO_TICKS(1000));
+            xSemaphoreTake(dma_tx_done_sem, portMAX_DELAY);
+            
         } 
     }
 }
@@ -361,6 +398,12 @@ static void udp_send_task(void *arg)
     }
 }
 
+// Convert a pixel into a character
+char pixelSymbol(int k) {
+    constexpr char scale[] = "#987654321-,.'` ";        // 16 characters
+    return scale[k >> 4];                               // Divide uint8_t by 4
+}
+
 int main () { 
     // небольшая задержка для включения датчика
     for (volatile uint32_t i = 0; i < 2000000; i++);
@@ -373,10 +416,10 @@ int main () {
 	r_camera.delayUs(ADNS3080_T_SWW);
 
     // установим динамический фреймрейт для обеих камер
-    volatile uint8_t l_ex_setup = l_camera.extendedSetup(false);
-    l_camera.delayUs(ADNS3080_T_SWW);
-    volatile uint8_t r_ex_setup = r_camera.extendedSetup(false);
-    l_camera.delayUs(ADNS3080_T_SWW);
+    // volatile uint8_t l_ex_setup = l_camera.extendedSetup(false);
+    // l_camera.delayUs(ADNS3080_T_SWW);
+    // volatile uint8_t r_ex_setup = r_camera.extendedSetup(false);
+    // l_camera.delayUs(ADNS3080_T_SWW);
 
     // // проверяем корректность подключения
     // if (l_setup == true && r_setup == true && l_ex_setup == true && r_ex_setup == true) {
@@ -391,11 +434,11 @@ int main () {
     // id1 = lan8720.lan8720ReadPhyId1(lan8720_addr);
     // id2 = lan8720.lan8720ReadPhyId2(lan8720_addr);
 
-    xTaskCreate(&l_motionBurst_task, "l_motionBurst", configMINIMAL_STACK_SIZE, NULL, 1, NULL);
-    xTaskCreate(&r_motionBurst_task, "r_motionBurst", configMINIMAL_STACK_SIZE, NULL, 1, NULL);
-    // xTaskCreate(&uart_ts_task, "usart2", 1024, NULL, 1, NULL);
-    xTaskCreate(&network_task, "network_task", 2048, NULL, 1, NULL);
-    xTaskCreate(&udp_send_task, "udp_send", 1024, NULL, 2, NULL);
+    // xTaskCreate(&l_motionBurst_task, "l_motionBurst", configMINIMAL_STACK_SIZE, NULL, 1, NULL);
+    // xTaskCreate(&r_motionBurst_task, "r_motionBurst", configMINIMAL_STACK_SIZE, NULL, 1, NULL);
+    xTaskCreate(&uart_ts_task, "usart2", 1024, NULL, 1, NULL);
+    // xTaskCreate(&network_task, "network_task", 2048, NULL, 1, NULL);
+    // xTaskCreate(&udp_send_task, "udp_send", 1024, NULL, 2, NULL);
     
-    vTaskStartScheduler();
+    // vTaskStartScheduler();
 }

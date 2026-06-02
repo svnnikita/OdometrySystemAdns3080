@@ -235,3 +235,52 @@ void ADNS3080::
     data.shutter = (int16_t)((rx_buf[4] << 8) | rx_buf[5]);
     data.max_pix = rx_buf[6];
 }
+
+// читаем изображение с датчика
+void ADNS3080::frameCapture(uint8_t recv_pixels[ADNS3080_PIXELS][ADNS3080_PIXELS])
+{
+	// даем команду датчику о считывании картинки с камеры
+	writeRegister(ADNS3080_FRAME_CAPTURE, 0x83);
+
+	// ждем 75 мкс
+	delayUs(ADNS3080_T_SRAD);
+
+	// опускаем линию
+	csLow();
+
+	// отправляем адрес регистра ADNS3080_PIXEL_BURST для чтения
+	spi_xfer(_spi, ADNS3080_PIXEL_BURST);
+
+	// ждем 75 мкс
+	delayUs(ADNS3080_T_SRAD);
+
+	// первый пиксель:
+	uint8_t pixel = 0;
+
+	// ищем значение первого пикселя
+	while((pixel & 0B01000000) == 0) {
+		
+		// отправляем любой бит для получения данных 
+		// из указанного регистра и получаем пиксель
+		pixel = spi_xfer(_spi, 0x00);
+		delayUs(ADNS3080_T_LOAD);  
+	}
+
+	// идем по массиву и записываем полученные пиксели:
+	for (uint8_t i = 0; i < ADNS3080_PIXELS; i++) {
+		for (uint8_t j = 0; j < ADNS3080_PIXELS; j++) {  
+		
+			// до масштабирования данные представляют собой значения от 0 до 63
+			// масштабируем кадр, чтобы получить данные в диапазоне 0 - 255
+			recv_pixels[i][j] = pixel << 2; 
+
+			// получаем следующий пиксель
+			pixel = spi_xfer(_spi, 0x00);
+			delayUs(ADNS3080_T_LOAD);  
+		}
+	}
+
+	// отключаем линию
+	csHigh();
+	delayUs(ADNS3080_T_LOAD + ADNS3080_T_BEXIT);
+}
