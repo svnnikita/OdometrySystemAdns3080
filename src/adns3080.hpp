@@ -130,9 +130,9 @@ private:
 	void csHigh() { gpio_set(_cs_gpio_port, _cs_gpio_pin); }
 
 	// создаем буфферы для получения и отправки данных
-	uint8_t tx_cmd_buf[1] = {ADNS3080_MOTION_BURST};
-	uint8_t tx_dummy_buf[7] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-	uint8_t rx_buf[7];
+	uint8_t _tx_cmd_buf[1] = {ADNS3080_MOTION_BURST};
+	uint8_t _tx_dummy_buf[7] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+	uint8_t _rx_buf[7];
 };
 
 #endif

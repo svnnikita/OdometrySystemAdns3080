@@ -27,13 +27,14 @@ typedef uintptr_t mem_ptr_t;    // общий тип указателя
 // использоваться семафоры
 #include "FreeRTOS.h"
 #include "task.h"
-// объявление переменной lev для сохранения защиты
+// объявление переменной lev (флага приоритетов), которая будет хранить состояние прерываний
 // используется для того, чтобы можно было указать,
 // какой тип данных используется для защиты
 #define SYS_ARCH_DECL_PROTECT(lev)   UBaseType_t lev
 // запускает блок защиты
+// функия taskENTER_CRITICAL_FROM_ISR() запрещает переключение контекста
 #define SYS_ARCH_PROTECT(lev)        lev = taskENTER_CRITICAL_FROM_ISR()
-// завершает блок защиты
+// завершает блок защитыб
 #define SYS_ARCH_UNPROTECT(lev)      taskEXIT_CRITICAL_FROM_ISR(lev)
 
 #endif /* LWIP_ARCH_CC_H */

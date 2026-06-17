@@ -117,22 +117,12 @@ void ADNS3080::writeRegister(const uint8_t reg, uint8_t output)
   	csLow();
 
 	// устанавливаем бит 7 регистра в единицу для записи
-    spi_send(_spi, reg | 0x80);          
-    // ждём окончания отправки адреса
-    while (!(SPI_SR(_spi) & SPI_SR_TXE));
+    spi_xfer(_spi, reg | 0x80);          
 
 	// отправляем данные
-    spi_send(_spi, output);              
-    // ждём окончания отправки данных
-    while (!(SPI_SR(_spi) & SPI_SR_TXE));
-    // ждём освобождения шины
-    while (SPI_SR(_spi) & SPI_SR_BSY);
-
+    spi_xfer(_spi, output);              
+    
     csHigh();
-
-	while (SPI_SR(_spi) & SPI_SR_RXNE) {
-        (void)SPI_DR(_spi);
-    }
 
     delayUs(ADNS3080_T_SWW);           
 }
@@ -183,7 +173,7 @@ void ADNS3080::
 
 	// передаем датчику адрес регистра
 	dma_disable_stream(_dma, _stream_tx);
-	dma_set_memory_address(_dma, _stream_tx, (uint32_t)tx_cmd_buf);
+	dma_set_memory_address(_dma, _stream_tx, (uint32_t)_tx_cmd_buf);
     dma_set_number_of_data(_dma, _stream_tx, 1);
 
 	// очищаем флаги прерываний dma
@@ -211,27 +201,28 @@ void ADNS3080::
 	dma_clear_interrupt_flags(_dma, _stream_rx, DMA_TCIF);
 
 	// настраиваем адрес памяти, куда будем принимать данные
-    dma_set_memory_address(_dma, _stream_rx, (uint32_t)rx_buf);
+    dma_set_memory_address(_dma, _stream_rx, (uint32_t)_rx_buf);
     dma_set_number_of_data(_dma, _stream_rx, 7);
 
 	// настраиваем адрес памяти, откуда будем брать фиктивные данные
-    dma_set_memory_address(_dma, _stream_tx, (uint32_t)tx_dummy_buf);
+    dma_set_memory_address(_dma, _stream_tx, (uint32_t)_tx_dummy_buf);
     dma_set_number_of_data(_dma, _stream_tx, 7);
 
 	// включаем оба потока
 	dma_enable_stream(_dma, _stream_rx);
     dma_enable_stream(_dma, _stream_tx);
 
-	// ждем завершения приема
+	// ждем завершения приема и передачи
 	xSemaphoreTake(_dma_rx_semaphore, portMAX_DELAY);
+	xSemaphoreTake(_dma_tx_semaphore, portMAX_DELAY);
 
 	csHigh();
 
 	// копируем данные
-    data.motion = (rx_buf[0] & 0x80) ? 1 : 0;
-    data.dx = (int8_t)rx_buf[1];
-    data.dy = (int8_t)rx_buf[2];
-    data.squal = rx_buf[3];
-    data.shutter = (int16_t)((rx_buf[4] << 8) | rx_buf[5]);
-    data.max_pix = rx_buf[6];
+    data.motion = (_rx_buf[0] & 0x80) ? 1 : 0;
+    data.dx = (int8_t)_rx_buf[1];
+    data.dy = (int8_t)_rx_buf[2];
+    data.squal = _rx_buf[3];
+    data.shutter = (int16_t)((_rx_buf[4] << 8) | _rx_buf[5]);
+    data.max_pix = _rx_buf[6];
 }

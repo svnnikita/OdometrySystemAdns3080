@@ -264,8 +264,8 @@ static void polling_rx_task(void *arg) {
             if (err != ERR_OK)
                 pbuf_free(p);
         }
-        // опрашиваем каждые 2 мс
-        vTaskDelay(pdMS_TO_TICKS(2));
+        // опрашиваем каждые 5 мс
+        vTaskDelay(pdMS_TO_TICKS(5));
     }
 }
 
@@ -354,7 +354,7 @@ static void udp_send_task(void *arg)
                 // выводим отладочное сообщение
                 usart_send_blocking(USART2, 'E');
             }
-
+            
         }
         // отправляем данные с периодом 20 мс
         vTaskDelay(pdMS_TO_TICKS(20));
@@ -391,11 +391,11 @@ int main () {
     // id1 = lan8720.lan8720ReadPhyId1(lan8720_addr);
     // id2 = lan8720.lan8720ReadPhyId2(lan8720_addr);
 
-    xTaskCreate(&l_motionBurst_task, "l_motionBurst", configMINIMAL_STACK_SIZE, NULL, 1, NULL);
-    xTaskCreate(&r_motionBurst_task, "r_motionBurst", configMINIMAL_STACK_SIZE, NULL, 1, NULL);
+    xTaskCreate(&l_motionBurst_task, "l_motionBurst", configMINIMAL_STACK_SIZE, NULL, 4, NULL);
+    xTaskCreate(&r_motionBurst_task, "r_motionBurst", configMINIMAL_STACK_SIZE, NULL, 4, NULL);
     // xTaskCreate(&uart_ts_task, "usart2", 1024, NULL, 1, NULL);
-    xTaskCreate(&network_task, "network_task", 2048, NULL, 1, NULL);
-    xTaskCreate(&udp_send_task, "udp_send", 1024, NULL, 2, NULL);
+    xTaskCreate(&network_task, "network_task", 2048, NULL, 2, NULL);
+    xTaskCreate(&udp_send_task, "udp_send", 1024, NULL, 3, NULL);
     
     vTaskStartScheduler();
 }

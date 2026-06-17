@@ -188,7 +188,7 @@ void SetupPeriph::spi1TxDmaSetup()
 	dma_set_peripheral_size(DMA2, DMA_STREAM3, DMA_SxCR_PSIZE_8BIT);
 	dma_set_memory_size(DMA2, DMA_STREAM3, DMA_SxCR_MSIZE_8BIT);
     
-    // высокий приоритет для канала DMA
+    // очень высокий приоритет для канала DMA
 	dma_set_priority(DMA2, DMA_STREAM3, DMA_SxCR_PL_VERY_HIGH);
     
     // после каждой передачи адрес в памяти автоматически 
@@ -218,7 +218,7 @@ void SetupPeriph::spi1RxDmaSetup()
 	// указываем адрес регистра данных SPI1
 	dma_set_peripheral_address(DMA2, DMA_STREAM2, (uint32_t)&SPI1_DR);
 
-    // устанавливаем режим отправки данных из памяти в периферию
+    // устанавливаем режим отправки данных из периферии в память
     dma_set_transfer_mode(DMA2, DMA_STREAM2,
 				DMA_SxCR_DIR_PERIPHERAL_TO_MEM);
 

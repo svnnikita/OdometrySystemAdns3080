@@ -6,20 +6,15 @@ extern "C" {
     #include "lwip/netif.h"
     #include "lwip/etharp.h"
     #include "lwip/pbuf.h"
-    // #include "lwip/tcpip.h"
 }
 
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/gpio.h>
-// #include <libopencm3/stm32/usart.h>
 #include <libopencm3/stm32/syscfg.h>
 #include <libopencm3/ethernet/mac.h>
 #include <libopencm3/ethernet/phy.h>
 #include <libopencm3/cm3/nvic.h>
 #include "netif/ethernet.h"
-
-// #include "FreeRTOS.h"
-// #include "semphr.h"
 
 #include "ethernetif.h"
 #include "lan8720_config.hpp"
@@ -122,9 +117,6 @@ bool safe_eth_tx(uint8_t *data, uint32_t len) {
 // - на цепочку буферов pbuf, содержащую пакет для отправки
 err_t low_level_output(struct netif *netif, struct pbuf *p)
 {
-    // выводим отладочное сообщение
-    // usart_send_blocking(USART2, 'T');
-
     // копируем цепочку pbuf в линейный массив
     // создаем выровненный буфер для формирования линейного кадра
     static __attribute__((aligned(4))) uint8_t tx_buffer[ETH_TX_BUF_SIZE];
@@ -158,8 +150,7 @@ err_t low_level_output(struct netif *netif, struct pbuf *p)
         // usart_send_blocking(USART2, 'E');
         return ERR_BUF;
     } 
-    // else 
-    //     usart_send_blocking(USART2, 'O');
+
     return ERR_OK;
 }
 
@@ -175,9 +166,6 @@ struct pbuf *low_level_input(struct netif *netif)
     bool res = eth_rx(dummy_buf, &len, ETH_RX_BUF_SIZE);
     // проверяем результат
     if (!res) return NULL;
-
-    // отправляем букву р, когда пакет принят
-    // usart_send_blocking(USART2, 'R');
 
     // выделяем буффер pbuf типа PBUF_RAW
     struct pbuf *p = pbuf_alloc(PBUF_RAW, len, PBUF_POOL);
